@@ -65,7 +65,7 @@ class Player(CircleShape):
         pygame.font.init()
         font = pygame.font.Font("PressStart2P-Regular.ttf", 16)
         text = font.render(f"Accuracy: {self.accuracy()}", True, "white")
-        screen.blit(text, (10, 48))
+        screen.blit(text, (10, 40))
 
 
     def triangle(self) -> list[pygame.Vector2]:
