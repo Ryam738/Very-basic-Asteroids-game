@@ -1,6 +1,6 @@
 import pygame
 from circleshape import CircleShape
-from constants import LINE_WIDTH, PLAYER_RADIUS, PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_SHOOT_SPEED, SHOT_RADIUS, PLAYER_SHOOT_COOLDOWN_SECONDS
+from constants import LINE_WIDTH, PLAYER_RADIUS, PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_SHOOT_SPEED, SHOT_RADIUS, PLAYER_SHOOT_COOLDOWN_SECONDS, PLAYER_REVERSE_COOLDOWN_SECONDS
 from shot import Shot
 
 
@@ -9,9 +9,63 @@ class Player(CircleShape):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0.0
         self.cooldown = 0.0
+        self.reverse_cooldown = 0.0
+        self.shots = 0
+        self.shots_hit = 0
+
+    def collides_with(self, other) -> bool:
+        points = self.triangle()
+
+        # 1. Check if circle center is inside the triangle
+        if self._point_in_triangle(other.position, points[0], points[1], points[2]):
+            return True
+
+        # 2. Check if circle intersects any of the 3 edges
+        edges = [(points[0], points[1]), (points[1], points[2]), (points[2], points[0])]
+        for p1, p2 in edges:
+            if self._circle_intersects_segment(other.position, other.radius, p1, p2):
+                return True
+
+        return False
+
+    def _point_in_triangle(self, p: pygame.Vector2, a: pygame.Vector2, b: pygame.Vector2, c: pygame.Vector2) -> bool:
+        # Cross product sign test: p is inside if it's on the same side of all 3 edges
+        def sign(p1, p2, p3):
+            return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+
+        d1 = sign(p, a, b)
+        d2 = sign(p, b, c)
+        d3 = sign(p, c, a)
+
+        has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+        has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+
+        return not (has_neg and has_pos)
+
+    def _circle_intersects_segment(self, center: pygame.Vector2, radius: float, a: pygame.Vector2, b: pygame.Vector2) -> bool:
+        # Vector from a to b
+        ab = b - a
+        ab_length_sq = ab.length_squared()
+        if ab_length_sq == 0:
+            return center.distance_to(a) <= radius
+
+        # Project center onto line segment ab, clamped to [0, 1]
+        t = max(0.0, min(1.0, (center - a).dot(ab) / ab_length_sq))
+        closest_point = a + ab * t
+
+        return center.distance_to(closest_point) <= radius
+
+    def accuracy(self) -> str:
+        if self.shots == 0:
+            return "0.00%"
+        return f"{self.shots_hit / self.shots * 100:.2f}%"
 
     def draw(self, screen: pygame.Surface) -> None:
         pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
+        pygame.font.init()
+        font = pygame.font.Font("PressStart2P-Regular.ttf", 16)
+        text = font.render(f"Accuracy: {self.accuracy()}", True, "white")
+        screen.blit(text, (10, 48))
 
 
     def triangle(self) -> list[pygame.Vector2]:
@@ -34,8 +88,11 @@ class Player(CircleShape):
     def shoot(self) -> None:
         shot = Shot(self.position.x, self.position.y)
         shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
+        self.shots += 1
 
     def update(self, dt: float) -> None:
+        self.cooldown -= dt
+        self.reverse_cooldown -= dt
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.rotate(-dt)
@@ -44,10 +101,10 @@ class Player(CircleShape):
         if keys[pygame.K_w] or keys[pygame.K_UP]:
             self.move(dt)
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            self.move(-dt)
+            if self.reverse_cooldown <= 0:
+                self.rotation += 180
+                self.reverse_cooldown = PLAYER_REVERSE_COOLDOWN_SECONDS
         if keys[pygame.K_SPACE]:
             if self.cooldown <= 0:
                 self.shoot()
                 self.cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
-            else:
-                self.cooldown -= dt
