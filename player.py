@@ -1,6 +1,6 @@
 import pygame
 from circleshape import CircleShape
-from constants import LINE_WIDTH, PLAYER_RADIUS, PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_SHOOT_SPEED, SHOT_RADIUS, PLAYER_SHOOT_COOLDOWN_SECONDS, PLAYER_REVERSE_COOLDOWN_SECONDS
+from constants import *
 from shot import Shot
 
 
@@ -12,6 +12,7 @@ class Player(CircleShape):
         self.reverse_cooldown = 0.0
         self.shots = 0
         self.shots_hit = 0
+        self.clock = 0.0
 
     def collides_with(self, other) -> bool:
         points = self.triangle()
@@ -65,7 +66,10 @@ class Player(CircleShape):
         pygame.font.init()
         font = pygame.font.Font("PressStart2P-Regular.ttf", 16)
         text = font.render(f"Accuracy: {self.accuracy()}", True, "white")
-        screen.blit(text, (10, 40))
+        text_clock = font.render(f"Time: {self.clock:.2f}", True, "white")
+
+        screen.blit(text, (10, 30))
+        screen.blit(text_clock, (10, 50))
 
 
     def triangle(self) -> list[pygame.Vector2]:
@@ -91,6 +95,7 @@ class Player(CircleShape):
         self.shots += 1
 
     def update(self, dt: float) -> None:
+        self.clock += dt
         self.cooldown -= dt
         self.reverse_cooldown -= dt
         keys = pygame.key.get_pressed()

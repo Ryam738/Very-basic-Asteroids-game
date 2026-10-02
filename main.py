@@ -25,20 +25,25 @@ def main() -> None:
     clock = pygame.time.Clock()
     dt = 0.0
     asteroid_field = AsteroidField()
-    god_mode = True
+    god_mode = False
     while True: #game loop
         log_state()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return
+                print("------Game over!------")
+                print(f"Score: {score.score}")
+                print(f"Accuracy: {player.accuracy()}")
+                print(f"Time: {player.clock:.2f}")
+                sys.exit()
         updatable.update(dt)
         for asteroid in asteroids:
             if asteroid.collides_with(player):
                 if not god_mode:
                     log_event("player_hit")
-                    print("Game over!")
+                    print("------Game over!------")
                     print(f"Score: {score.score}")
                     print(f"Accuracy: {player.accuracy()}")
+                    print(f"Time: {player.clock:.2f}")
                     sys.exit()
             for shot in shots:
                 if asteroid.collides_with(shot):
