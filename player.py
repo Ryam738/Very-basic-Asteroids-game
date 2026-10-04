@@ -1,12 +1,12 @@
 import pygame
 from circleshape import CircleShape
-from constants import *
+import constants
 from shot import Shot
 
 
 class Player(CircleShape):
     def __init__(self, x: float, y: float) -> None:
-        super().__init__(x, y, PLAYER_RADIUS)
+        super().__init__(x, y, constants.PLAYER_RADIUS)
         self.rotation = 0.0
         self.cooldown = 0.0
         self.reverse_cooldown = 0.0
@@ -62,7 +62,7 @@ class Player(CircleShape):
         return f"{self.shots_hit / self.shots * 100:.2f}%"
 
     def draw(self, screen: pygame.Surface) -> None:
-        pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
+        pygame.draw.polygon(screen, "white", self.triangle(), constants.LINE_WIDTH)
         pygame.font.init()
         font = pygame.font.Font("PressStart2P-Regular.ttf", 16)
         text = font.render(f"Accuracy: {self.accuracy()}", True, "white")
@@ -81,20 +81,22 @@ class Player(CircleShape):
         return [a, b, c]
 
     def rotate(self, dt: float) -> None:
-        self.rotation += PLAYER_TURN_SPEED * dt
+        self.rotation += constants.PLAYER_TURN_SPEED * dt
 
     def move(self, dt: float) -> None:
         unit_vector = pygame.Vector2(0, 1)
         rotated_vector = unit_vector.rotate(self.rotation)
-        rotated_with_speed_vector = rotated_vector * PLAYER_SPEED * dt
+        rotated_with_speed_vector = rotated_vector * constants.PLAYER_SPEED * dt
         self.position += rotated_with_speed_vector
 
     def shoot(self) -> None:
         shot = Shot(self.position.x, self.position.y)
-        shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
+        shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * constants.PLAYER_SHOOT_SPEED
         self.shots += 1
 
     def update(self, dt: float) -> None:
+        self.position.x = max(0, min(self.position.x, constants.SCREEN_WIDTH))
+        self.position.y = max(0, min(self.position.y, constants.SCREEN_HEIGHT))
         self.clock += dt
         self.cooldown -= dt
         self.reverse_cooldown -= dt
@@ -108,8 +110,8 @@ class Player(CircleShape):
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
             if self.reverse_cooldown <= 0:
                 self.rotation += 180
-                self.reverse_cooldown = PLAYER_REVERSE_COOLDOWN_SECONDS
+                self.reverse_cooldown = constants.PLAYER_REVERSE_COOLDOWN_SECONDS
         if keys[pygame.K_SPACE]:
             if self.cooldown <= 0:
                 self.shoot()
-                self.cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
+                self.cooldown = constants.PLAYER_SHOOT_COOLDOWN_SECONDS

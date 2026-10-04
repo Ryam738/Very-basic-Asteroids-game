@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 import pygame
 from asteroid import Asteroid
-from constants import *
+import constants
 
 Edge = tuple[pygame.Vector2, Callable[[float], pygame.Vector2]]
 
@@ -14,22 +14,22 @@ class AsteroidField(pygame.sprite.Sprite):
     edges: list[Edge] = [
         (
             pygame.Vector2(1, 0),
-            lambda y: pygame.Vector2(-ASTEROID_MAX_RADIUS, y * SCREEN_HEIGHT),
+            lambda y: pygame.Vector2(-constants.ASTEROID_MAX_RADIUS, y * constants.SCREEN_HEIGHT),
         ),
         (
             pygame.Vector2(-1, 0),
             lambda y: pygame.Vector2(
-                SCREEN_WIDTH + ASTEROID_MAX_RADIUS, y * SCREEN_HEIGHT
+                constants.SCREEN_WIDTH + constants.ASTEROID_MAX_RADIUS, y * constants.SCREEN_HEIGHT
             ),
         ),
         (
             pygame.Vector2(0, 1),
-            lambda x: pygame.Vector2(x * SCREEN_WIDTH, -ASTEROID_MAX_RADIUS),
+            lambda x: pygame.Vector2(x * constants.SCREEN_WIDTH, -constants.ASTEROID_MAX_RADIUS),
         ),
         (
             pygame.Vector2(0, -1),
             lambda x: pygame.Vector2(
-                x * SCREEN_WIDTH, SCREEN_HEIGHT + ASTEROID_MAX_RADIUS
+                x * constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT + constants.ASTEROID_MAX_RADIUS
             ),
         ),
     ]
@@ -38,6 +38,7 @@ class AsteroidField(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.spawn_timer = 0.0
         self.game_timer = 0.0
+        self.diff_multiplier = 1.0
 
     def spawn(
         self, radius: float, position: pygame.Vector2, velocity: pygame.Vector2
@@ -51,12 +52,9 @@ class AsteroidField(pygame.sprite.Sprite):
         t7 = min(15, 1 + int(self.game_timer * 0.05))
         kinds = [1, 2, 3, 4, 7]
         weights = [20, 40, 35, 25, t7]
+        spawn_interval = max(0.25, constants.ASTEROID_SPAWN_RATE_SECONDS - (self.game_timer * 0.001))
 
-
-        # Never let the spawn interval go below 0.1 seconds
-        spawn_interval = max(0.25, ASTEROID_SPAWN_RATE_SECONDS - (self.game_timer * 0.001))
-
-        if self.spawn_timer > spawn_interval:
+        if self.spawn_timer / self.diff_multiplier > spawn_interval:
             self.spawn_timer = 0
 
             # Ensure min_speed can never exceed max_speed
@@ -76,4 +74,4 @@ class AsteroidField(pygame.sprite.Sprite):
                 speed = random.randint(min_speed, max_speed)
             velocity = edge[0] * speed
             velocity = velocity.rotate(random.randint(-30, 30))
-            self.spawn(ASTEROID_MIN_RADIUS * kind, position, velocity)
+            self.spawn(constants.ASTEROID_MIN_RADIUS * kind, position, velocity)

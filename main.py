@@ -1,5 +1,5 @@
 import pygame
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT
+import constants
 from logger import log_state, log_event
 from player import Player
 from asteroid import Asteroid
@@ -10,7 +10,7 @@ from score import Score
 
 def main() -> None:
     pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT), pygame.RESIZABLE)
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
@@ -21,7 +21,7 @@ def main() -> None:
     Shot.containers = (updatable, drawable, shots)
     Score.containers = (drawable)
     score = Score(0)
-    player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+    player = Player(constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2)
     clock = pygame.time.Clock()
     dt = 0.0
     asteroid_field = AsteroidField()
@@ -35,6 +35,14 @@ def main() -> None:
                 print(f"Accuracy: {player.accuracy()}")
                 print(f"Time: {player.clock:.2f}")
                 sys.exit()
+            elif event.type == pygame.VIDEORESIZE:
+                screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                constants.SCREEN_WIDTH = event.w
+                constants.SCREEN_HEIGHT = event.h
+                if event.w > constants.BASE_SCREEN_WIDTH or event.h > constants.BASE_SCREEN_HEIGHT:
+                    asteroid_field.diff_multiplier = 1.4
+                else:
+                    asteroid_field.diff_multiplier = 1.0
         updatable.update(dt)
         for asteroid in asteroids:
             if asteroid.collides_with(player):
